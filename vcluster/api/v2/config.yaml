@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/deepmap/oapi-codegen/HEAD/configuration-schema.json
+package: v2
+generate:
+  std-http-server: true
+  embedded-spec: true
+  models: true
+  strict-server: true
+output: handler.gen.go

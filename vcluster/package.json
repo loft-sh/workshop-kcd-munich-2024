@@ -1,0 +1,13 @@
+{
+  "name": "vcluster-workshop",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@typespec/compiler": "latest",
+    "@typespec/http": "latest",
+    "@typespec/openapi3": "latest",
+    "@typespec/rest": "latest",
+    "@typespec/versioning": "^0.57.0"
+  },
+  "private": true
+}

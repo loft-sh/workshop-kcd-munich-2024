@@ -1,0 +1,443 @@
+openapi: 3.0.0
+info:
+  title: Compute Platform Service
+  description: |-
+    API enabling you to provision compute capacity in a Kubernetes cluster
+
+    RFC 9457 compatible
+  version: v2
+tags: []
+paths:
+  /kubernetes:
+    get:
+      operationId: Kubernetes_list
+      description: List all Kubernetes namespaces you own
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Models.KubernetesNamespace'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorGeneric'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+  /kubernetes/{namespace}:
+    get:
+      operationId: Namespace_get
+      description: Get details about a Kubernetes namespace you own
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.KubernetesNamespace'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorGeneric'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorNotFound'
+    post:
+      operationId: Namespace_create
+      description: Create a Kubernetes namespace
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          description: The name of your namespace to be created
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.KubernetesNamespace'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorGeneric'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorAlreadyExists'
+    delete:
+      operationId: Namespace_delete
+      description: Delete a Kubernetes namespace you own
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorGeneric'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorNotFound'
+  /kubernetes/{namespace}/kubeconfig:
+    get:
+      operationId: Namespace_kubeconfig
+      description: |-
+        Get a Kubeconfig to access your namespace.
+
+        Will return a Kubeconfig yaml file with
+        access to the namespace.
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Models.KubeconfigOptions.insecure'
+        - $ref: '#/components/parameters/Models.KubeconfigOptions.publicK8sEndpoint'
+        - $ref: '#/components/parameters/Models.KubeconfigOptions.certificateAuthorityData'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            text/yaml:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorNotFound'
+  /kubernetes/{namespace}/vcluster:
+    get:
+      operationId: vClusterService_get
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.vCluster'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorNotFound'
+    post:
+      operationId: vClusterService_create
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.vCluster'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorNotFound'
+    delete:
+      operationId: vClusterService_delete
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorNotFound'
+  /kubernetes/{namespace}/vcluster/kubeconfig:
+    get:
+      operationId: vClusterService_kubeconfig
+      description: |-
+        Get a Kubeconfig to access your vCluster.
+
+        Will return a Kubeconfig yaml file with
+        access to the namespace.
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Models.KubeconfigOptions.insecure'
+        - $ref: '#/components/parameters/Models.KubeconfigOptions.publicK8sEndpoint'
+        - $ref: '#/components/parameters/Models.KubeconfigOptions.certificateAuthorityData'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            text/yaml:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorUnauthorized'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Models.ErrorNotFound'
+security:
+  - BearerAuth: []
+components:
+  parameters:
+    Models.KubeconfigOptions.certificateAuthorityData:
+      name: certificateAuthorityData
+      in: query
+      required: false
+      description: Base64-encoded certificate data
+      schema:
+        type: string
+        format: byte
+    Models.KubeconfigOptions.insecure:
+      name: insecure
+      in: query
+      required: false
+      schema:
+        type: boolean
+    Models.KubeconfigOptions.publicK8sEndpoint:
+      name: publicK8sEndpoint
+      in: query
+      required: false
+      schema:
+        type: string
+  schemas:
+    Models.ApiErrorKind:
+      type: string
+      enum:
+        - Generic
+        - AlreadyExists
+        - NotFound
+        - Unauthorized
+    Models.ErrorAlreadyExists:
+      type: object
+      required:
+        - type
+        - title
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          enum:
+            - AlreadyExists
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+    Models.ErrorGeneric:
+      type: object
+      required:
+        - type
+        - title
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          enum:
+            - Generic
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+    Models.ErrorNotFound:
+      type: object
+      required:
+        - type
+        - title
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          enum:
+            - NotFound
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+    Models.ErrorUnauthorized:
+      type: object
+      required:
+        - type
+        - title
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          enum:
+            - Unauthorized
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+    Models.KubernetesNamespace:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+    Models.vCluster:
+      type: object
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        version:
+          type: string
+          enum:
+            - 0.19.5
+            - 0.20.0-beta.9
+    Versions:
+      type: string
+      enum:
+        - v1
+        - v2
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+servers:
+  - url: http://localhost:8080/{version}
+    description: API version
+    variables:
+      version:
+        default: v1
+        description: API version
+        enum:
+          - v1
+          - v2

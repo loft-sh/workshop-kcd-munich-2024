@@ -1,0 +1,9 @@
+generate:
+  npx tsp compile api
+  go generate ./...
+
+build: generate
+  go build -o ./tmp/main .
+
+dev:
+  air
