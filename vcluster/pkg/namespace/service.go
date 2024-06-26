@@ -16,6 +16,10 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+var ErrUserNotFound = fmt.Errorf("namespace: %w", auth.ErrNotFound)
+
+var LabelOwner = "workshop.loft.sh/kcd-munich-owner"
+
 type Service struct {
 	Clientset *kubernetes.Clientset
 	Config    *rest.Config

@@ -9,18 +9,32 @@ namespace ComputePlatformService.Kubernetes.Namespace.vClusterService {
   @readsResource(vCluster)
   op get(
     @path("namespace") ns: string,
+
+    @maxLength(64)
+    @query
+    name?: string,
   ): vCluster | ErrorUnauthorized | ErrorNotFound;
 
+  /** Create a new vCluster or update an existing one */
   @added(Versions.v2)
-  @createsResource(vCluster)
+  @createsOrUpdatesResource(vCluster)
   op create(
     @path("namespace") ns: string,
+
+    @maxLength(64)
+    name?: string,
+
+    version?: vClusterVersion = vClusterVersion.Stable,
+    values?: Record<unknown>,
   ): vCluster | ErrorUnauthorized | ErrorNotFound;
 
   @added(Versions.v2)
   @deletesResource(vCluster)
   op delete(
     @path("namespace") ns: string,
+
+    @maxLength(64)
+    name?: string,
   ): boolean | ErrorUnauthorized | ErrorNotFound;
 
   /**
@@ -33,6 +47,9 @@ namespace ComputePlatformService.Kubernetes.Namespace.vClusterService {
   @route("/kubeconfig")
   op kubeconfig(
     @path("namespace") ns: string,
-    ...KubeconfigOptions,
+
+    @maxLength(64)
+    @query
+    name?: string,
   ): Kubeconfig | ErrorUnauthorized | ErrorNotFound;
 }

@@ -49,8 +49,10 @@ const (
 
 // Defines values for ModelsVClusterVersion.
 const (
-	N0195      ModelsVClusterVersion = "0.19.5"
+	Local      ModelsVClusterVersion = "Local"
+	N0196      ModelsVClusterVersion = "0.19.6"
 	N0200Beta9 ModelsVClusterVersion = "0.20.0-beta.9"
+	Stable     ModelsVClusterVersion = "Stable"
 )
 
 // ModelsErrorAlreadyExists defines model for Models.ErrorAlreadyExists.
@@ -104,11 +106,12 @@ type ModelsKubernetesNamespace struct {
 
 // ModelsVCluster defines model for Models.vCluster.
 type ModelsVCluster struct {
-	Name    string                `json:"name"`
-	Version ModelsVClusterVersion `json:"version"`
+	Name    string                  `json:"name"`
+	Values  *map[string]interface{} `json:"values,omitempty"`
+	Version ModelsVClusterVersion   `json:"version"`
 }
 
-// ModelsVClusterVersion defines model for ModelsVCluster.Version.
+// ModelsVClusterVersion defines model for Models.vClusterVersion.
 type ModelsVClusterVersion string
 
 // ModelsKubeconfigOptionsCertificateAuthorityData defines model for Models.KubeconfigOptions.certificateAuthorityData.
@@ -129,14 +132,33 @@ type NamespaceKubeconfigParams struct {
 	CertificateAuthorityData *ModelsKubeconfigOptionsCertificateAuthorityData `form:"certificateAuthorityData,omitempty" json:"certificateAuthorityData,omitempty"`
 }
 
+// VClusterServiceDeleteJSONBody defines parameters for VClusterServiceDelete.
+type VClusterServiceDeleteJSONBody struct {
+	Name *string `json:"name,omitempty"`
+}
+
+// VClusterServiceGetParams defines parameters for VClusterServiceGet.
+type VClusterServiceGetParams struct {
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+}
+
+// VClusterServiceCreateJSONBody defines parameters for VClusterServiceCreate.
+type VClusterServiceCreateJSONBody struct {
+	Name    *string                 `json:"name,omitempty"`
+	Values  *map[string]interface{} `json:"values,omitempty"`
+	Version *ModelsVClusterVersion  `json:"version,omitempty"`
+}
+
 // VClusterServiceKubeconfigParams defines parameters for VClusterServiceKubeconfig.
 type VClusterServiceKubeconfigParams struct {
-	Insecure          *ModelsKubeconfigOptionsInsecure          `form:"insecure,omitempty" json:"insecure,omitempty"`
-	PublicK8sEndpoint *ModelsKubeconfigOptionsPublicK8sEndpoint `form:"publicK8sEndpoint,omitempty" json:"publicK8sEndpoint,omitempty"`
-
-	// CertificateAuthorityData Base64-encoded certificate data
-	CertificateAuthorityData *ModelsKubeconfigOptionsCertificateAuthorityData `form:"certificateAuthorityData,omitempty" json:"certificateAuthorityData,omitempty"`
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
 }
+
+// VClusterServiceDeleteJSONRequestBody defines body for VClusterServiceDelete for application/json ContentType.
+type VClusterServiceDeleteJSONRequestBody VClusterServiceDeleteJSONBody
+
+// VClusterServiceCreateJSONRequestBody defines body for VClusterServiceCreate for application/json ContentType.
+type VClusterServiceCreateJSONRequestBody VClusterServiceCreateJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -160,9 +182,9 @@ type ServerInterface interface {
 	VClusterServiceDelete(w http.ResponseWriter, r *http.Request, namespace string)
 
 	// (GET /kubernetes/{namespace}/vcluster)
-	VClusterServiceGet(w http.ResponseWriter, r *http.Request, namespace string)
+	VClusterServiceGet(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceGetParams)
 
-	// (POST /kubernetes/{namespace}/vcluster)
+	// (PATCH /kubernetes/{namespace}/vcluster)
 	VClusterServiceCreate(w http.ResponseWriter, r *http.Request, namespace string)
 
 	// (GET /kubernetes/{namespace}/vcluster/kubeconfig)
@@ -379,8 +401,19 @@ func (siw *ServerInterfaceWrapper) VClusterServiceGet(w http.ResponseWriter, r *
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params VClusterServiceGetParams
+
+	// ------------- Optional query parameter "name" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "name", r.URL.Query(), &params.Name)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.VClusterServiceGet(w, r, namespace)
+		siw.Handler.VClusterServiceGet(w, r, namespace, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -438,27 +471,11 @@ func (siw *ServerInterfaceWrapper) VClusterServiceKubeconfig(w http.ResponseWrit
 	// Parameter object where we will unmarshal all parameters from the context
 	var params VClusterServiceKubeconfigParams
 
-	// ------------- Optional query parameter "insecure" -------------
+	// ------------- Optional query parameter "name" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "insecure", r.URL.Query(), &params.Insecure)
+	err = runtime.BindQueryParameter("form", true, false, "name", r.URL.Query(), &params.Name)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "insecure", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "publicK8sEndpoint" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "publicK8sEndpoint", r.URL.Query(), &params.PublicK8sEndpoint)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "publicK8sEndpoint", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "certificateAuthorityData" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "certificateAuthorityData", r.URL.Query(), &params.CertificateAuthorityData)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "certificateAuthorityData", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
 		return
 	}
 
@@ -594,7 +611,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/kubernetes/{namespace}/kubeconfig", wrapper.NamespaceKubeconfig)
 	m.HandleFunc("DELETE "+options.BaseURL+"/kubernetes/{namespace}/vcluster", wrapper.VClusterServiceDelete)
 	m.HandleFunc("GET "+options.BaseURL+"/kubernetes/{namespace}/vcluster", wrapper.VClusterServiceGet)
-	m.HandleFunc("POST "+options.BaseURL+"/kubernetes/{namespace}/vcluster", wrapper.VClusterServiceCreate)
+	m.HandleFunc("PATCH "+options.BaseURL+"/kubernetes/{namespace}/vcluster", wrapper.VClusterServiceCreate)
 	m.HandleFunc("GET "+options.BaseURL+"/kubernetes/{namespace}/vcluster/kubeconfig", wrapper.VClusterServiceKubeconfig)
 
 	return m
@@ -814,6 +831,7 @@ func (response NamespaceKubeconfig404JSONResponse) VisitNamespaceKubeconfigRespo
 
 type VClusterServiceDeleteRequestObject struct {
 	Namespace string `json:"namespace"`
+	Body      *VClusterServiceDeleteJSONRequestBody
 }
 
 type VClusterServiceDeleteResponseObject interface {
@@ -849,6 +867,7 @@ func (response VClusterServiceDelete404JSONResponse) VisitVClusterServiceDeleteR
 
 type VClusterServiceGetRequestObject struct {
 	Namespace string `json:"namespace"`
+	Params    VClusterServiceGetParams
 }
 
 type VClusterServiceGetResponseObject interface {
@@ -884,6 +903,7 @@ func (response VClusterServiceGet404JSONResponse) VisitVClusterServiceGetRespons
 
 type VClusterServiceCreateRequestObject struct {
 	Namespace string `json:"namespace"`
+	Body      *VClusterServiceCreateJSONRequestBody
 }
 
 type VClusterServiceCreateResponseObject interface {
@@ -987,7 +1007,7 @@ type StrictServerInterface interface {
 	// (GET /kubernetes/{namespace}/vcluster)
 	VClusterServiceGet(ctx context.Context, request VClusterServiceGetRequestObject) (VClusterServiceGetResponseObject, error)
 
-	// (POST /kubernetes/{namespace}/vcluster)
+	// (PATCH /kubernetes/{namespace}/vcluster)
 	VClusterServiceCreate(ctx context.Context, request VClusterServiceCreateRequestObject) (VClusterServiceCreateResponseObject, error)
 
 	// (GET /kubernetes/{namespace}/vcluster/kubeconfig)
@@ -1158,6 +1178,13 @@ func (sh *strictHandler) VClusterServiceDelete(w http.ResponseWriter, r *http.Re
 
 	request.Namespace = namespace
 
+	var body VClusterServiceDeleteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.VClusterServiceDelete(ctx, request.(VClusterServiceDeleteRequestObject))
 	}
@@ -1179,10 +1206,11 @@ func (sh *strictHandler) VClusterServiceDelete(w http.ResponseWriter, r *http.Re
 }
 
 // VClusterServiceGet operation middleware
-func (sh *strictHandler) VClusterServiceGet(w http.ResponseWriter, r *http.Request, namespace string) {
+func (sh *strictHandler) VClusterServiceGet(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceGetParams) {
 	var request VClusterServiceGetRequestObject
 
 	request.Namespace = namespace
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.VClusterServiceGet(ctx, request.(VClusterServiceGetRequestObject))
@@ -1209,6 +1237,13 @@ func (sh *strictHandler) VClusterServiceCreate(w http.ResponseWriter, r *http.Re
 	var request VClusterServiceCreateRequestObject
 
 	request.Namespace = namespace
+
+	var body VClusterServiceCreateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.VClusterServiceCreate(ctx, request.(VClusterServiceCreateRequestObject))
@@ -1260,27 +1295,29 @@ func (sh *strictHandler) VClusterServiceKubeconfig(w http.ResponseWriter, r *htt
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xZzXLbNhB+Fcy2R4aSXSe1eXMcx+NJmnqa/hxsHyBwZSGFAAZYKlY1evcOAEkkK1FK",
-	"7KhuJzxpRAL7g/2+3cVyBsKMC6NRk4NsBgW3fIyENvz7yeSoXPqmHKAweijvfi5IGu1SgZbkUApOeFrS",
-	"yFhJ01ecuN+UoxNWhoWQwUvu8MXRM9TC5Jiz2kaW+w0JSL/sY4l2CgloPkbIoFV+Ak6McBwUDY0dc4IM",
-	"BlNCSICmhd/ryEp9B/N50m6/1A5FadGL2aR/9b6ubyF/YIxCrrcrKMqBkuLNsTvXeWGkpjZN6ws3qFy5",
-	"NF++rIfn3FpjT5VFnk/P76VbRNKawp8iuhgU4lJtEOnP3xHXAje+JEmq5U14MAPU5Riya2gacLspHBY/",
-	"ltJi7peHt0v5ydK+mjWVBDP4gIKgOu7g8AVqtFI8hatL1ft38p2h16bU+VN4udK9fzd/0zyy/C98Elcb",
-	"+vfqrs8UViOhe8fH6AoebW86HFPDDMb8/i3qOxpB9uIogbHUy78Hu2wMIrbYMTlTpSO0X0d5AhO0LiT8",
-	"6lD76cFJ+hwS6KeH/bT/bIDE05PdxxsMqCSuO+GToM/OkqbvfTKMdr9EbtH6auH/hSwZsnV4XFWHEVER",
-	"E6nUQ7Ner06vLhlqPlBS37GpKRkZVlgzkd4Y5otlScgEL7iQNGVSM86qoDIRj/VG3+hfXp+xk6PnP4ZN",
-	"nORAVajJ4Gwh6Upx8oWMvUc7kaLueQaTQ3+2pkDNCwkZ/JD20z4kUHAaBad7f65U+793SOsevZWOGFeq",
-	"bqZegs8FH80nDUGP5X7TZQ4ZVKu9APAxcoXRLmo67Pf9jzCaMBY3XhTKF2xpdO+Di1CoCpkkHIeN31sc",
-	"Qgbf9aq+o7coab0tHFmRFri1fBoj2PTz1xEyjyN0xEbcMVcKgZhjnvrdR19o8GfY2ShDLQY5tBO0TJhS",
-	"5UwbYqXO0fo8kTOqGZyX6JEm9YQrmTM31cTvF4Yf7MXwRs7bYP2pEOgck46VtZWpXzpP6sDrzVZomkf0",
-	"KSRcx+Gr8LxJl9XOVhiuIBC3B/BXLer1oqnyhKh6qpVUqGcWsiVu661uHwnxtfawQ+gTIdSbdLQXk1Y9",
-	"0Y7D5Nqf5FA2zxBzZtGZ0gpMo4SNCfsCicWmwjE+MCU9mDMXSP9hwjy0FHTE6oi1i1iFcRuYdWaRt5ag",
-	"dhrFbetMWjfTC2Nm6Jlpa0QlwwbIRBCTL0ceHQU7Cj6Mgid7Mak5wNkRYmH0UElBjn2SNAqHKUprURNz",
-	"5DlmhuFhjMCOrjE8jvOz1luML4qRt3GhjxePh9QkW+rvXn9IpZhFKq1u7prysWJDqTDYfaMXIsgEaysh",
-	"7cmgErbH0ppsDlulrrd7tPkYIetTycdIa53mfkb+Irynno9aE9TV7FdqHuapG0alX5ahulr7oFq7hdYT",
-	"UQ2Zqlthk1e/LwZRi/HHN3DL63D2uMvSVvz87288q8Fsh6x//7awFVptt4AOXR26Hlcfv0b/u4zsntrf",
-	"f3Cha4K7JrgjeY3ktW+SgQT1r5HXtz7EUeCmwdHp1SVbfvNLoLRq8Zky6/WUEVyNjKPsuH/c780Wy+aQ",
-	"wIRbyQcqQqb2+TXHIS+VR8XkAJKtqpZfasPCySHczufz2/nfAQAA//8/jgCsEyQAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

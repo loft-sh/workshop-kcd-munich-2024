@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster/pkg/namespace"
+	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster/pkg/vcluster"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -16,26 +17,85 @@ var _ StrictServerInterface = (*ClusterService)(nil)
 
 type ClusterService struct {
 	namespaceService namespace.Service
+	vClusterService  vcluster.Service
 }
 
 // VClusterServiceCreate implements StrictServerInterface.
 func (c *ClusterService) VClusterServiceCreate(ctx context.Context, request VClusterServiceCreateRequestObject) (VClusterServiceCreateResponseObject, error) {
-	panic("unimplemented")
+	installOptions := vcluster.VClusterInstallOptions{
+		Namespace: request.Namespace,
+	}
+
+	if request.Body.Name != nil {
+		installOptions.Name = *request.Body.Name
+	}
+	if request.Body.Version != nil && *request.Body.Version != Stable {
+		installOptions.Version = string(*request.Body.Version)
+	}
+	if request.Body.Values != nil {
+		installOptions.Values = *request.Body.Values
+	}
+
+	vClusterRelease, err := c.vClusterService.Install(ctx, installOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return VClusterServiceCreate200JSONResponse{
+		Name:    vClusterRelease.Name,
+		Version: ModelsVClusterVersion(vClusterRelease.Version),
+	}, nil
 }
 
 // VClusterServiceDelete implements StrictServerInterface.
 func (c *ClusterService) VClusterServiceDelete(ctx context.Context, request VClusterServiceDeleteRequestObject) (VClusterServiceDeleteResponseObject, error) {
-	panic("unimplemented")
+	name := ""
+	if request.Body.Name != nil {
+		name = *request.Body.Name
+	}
+
+	if err := c.vClusterService.Uninstall(ctx, request.Namespace, name); err != nil {
+		return nil, err
+	}
+
+	return VClusterServiceDelete200JSONResponse(true), nil
 }
 
 // VClusterServiceKubeconfig implements StrictServerInterface.
 func (c *ClusterService) VClusterServiceKubeconfig(ctx context.Context, request VClusterServiceKubeconfigRequestObject) (VClusterServiceKubeconfigResponseObject, error) {
-	panic("unimplemented")
+	name := ""
+	if request.Params.Name != nil {
+		name = *request.Params.Name
+	}
+
+	kubeconfig, err := c.vClusterService.Kubeconfig(ctx, request.Namespace, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return VClusterServiceKubeconfig200TextyamlResponse{
+		Body:          bytes.NewReader(kubeconfig),
+		ContentLength: int64(len(kubeconfig)),
+	}, nil
 }
 
 // VClusterServiceGet implements StrictServerInterface.
 func (c *ClusterService) VClusterServiceGet(ctx context.Context, request VClusterServiceGetRequestObject) (VClusterServiceGetResponseObject, error) {
-	panic("unimplemented")
+	name := ""
+	if request.Params.Name != nil {
+		name = *request.Params.Name
+	}
+
+	release, values, err := c.vClusterService.Get(ctx, request.Namespace, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return VClusterServiceGet200JSONResponse{
+		Name:    release.Name,
+		Version: ModelsVClusterVersion(release.Version),
+		Values:  &values,
+	}, nil
 }
 
 // KubernetesList implements StrictServerInterface.
@@ -119,6 +179,9 @@ func NewClusterService(clientset *kubernetes.Clientset, config *rest.Config) *Cl
 		namespaceService: namespace.Service{
 			Clientset: clientset,
 			Config:    config,
+		},
+		vClusterService: vcluster.Service{
+			Clientset: clientset,
 		},
 	}
 }

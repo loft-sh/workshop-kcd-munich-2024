@@ -293,6 +293,13 @@ components:
           type: string
           minLength: 1
           maxLength: 64
+    Models.vClusterVersion:
+      type: string
+      enum:
+        - Stable
+        - Local
+        - 0.19.6
+        - 0.20.0-beta.9
     Versions:
       type: string
       enum:

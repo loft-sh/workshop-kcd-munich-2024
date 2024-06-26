@@ -31,7 +31,15 @@ model vCluster {
   @key
   name: string;
 
-  version: "0.19.5" | "0.20.0-beta.9";
+  version: vClusterVersion;
+  values?: Record<unknown>;
+}
+
+enum vClusterVersion {
+  Stable,
+  Local,
+  `0.19.6`,
+  `0.20.0-beta.9`,
 }
 
 @error

@@ -183,7 +183,9 @@ func registerApiVersion(h *http.ServeMux, api apiVersion) error {
 				Instance: "",
 			}
 
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				http.Error(w, err.Error(), 400)
+			}
 		},
 	})(r)
 
@@ -266,5 +268,7 @@ func errorHandlerFunc(w http.ResponseWriter, r *http.Request, err error) {
 		Instance: r.URL.Path,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 400)
+	}
 }
