@@ -1,0 +1,7 @@
+{
+  "name": "Jupyter notebook",
+  "build": {
+    "Dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "chmod +x devpod-scenario-2/.devcontainer/setup.sh && ./devpod-scenario-2/.devcontainer/setup.sh"
+}

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: devpod
+      env:
+        - name: DB_HOST
+          value: mysql
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_USERNAME
+          value: root
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password

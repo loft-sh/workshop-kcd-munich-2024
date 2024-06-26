@@ -1,0 +1,15 @@
+{
+  "name": "Kubebuilder",
+  "image": "mcr.microsoft.com/devcontainers/go:1.22-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    },
+    "./features/kubectl-helm-kind": {
+      "version": "latest",
+      "kind": "latest",
+      "helm": "latest"
+    }
+  },
+  "postCreateCommand": "chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh"
+}
