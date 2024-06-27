@@ -1,0 +1,3 @@
+[submodule "vcluster/vcluster-oss"]
+	path = vcluster/vcluster-oss
+	url = https://github.com/loft-sh/vcluster.git
