@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -86,7 +87,10 @@ func main() {
 			GetSwagger: apiv2.GetSwagger,
 			ServiceRouter: func(r *http.ServeMux) {
 				// Create an instance of our handler which satisfies the generated interface
-				strictClusterServiceHandler := apiv2.NewStrictHandler(apiv2.NewClusterService(clientset, config), nil)
+				strictClusterServiceHandler := apiv2.NewStrictHandlerWithOptions(apiv2.NewClusterService(clientset, config), nil, apiv2.StrictHTTPServerOptions{
+					RequestErrorHandlerFunc:  errorHandlerFunc,
+					ResponseErrorHandlerFunc: errorHandlerFunc,
+				})
 
 				// We now register our petStore above as the handler for the interface
 				apiv2.HandlerFromMux(strictClusterServiceHandler, r)
@@ -184,6 +188,7 @@ func registerApiVersion(h *http.ServeMux, api apiVersion) error {
 			}
 
 			if err := json.NewEncoder(w).Encode(response); err != nil {
+				slog.Error("failed to encode error response", "err", err)
 				http.Error(w, err.Error(), 400)
 			}
 		},
@@ -269,6 +274,7 @@ func errorHandlerFunc(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
+		slog.Error("failed to encode error response", "err", err)
 		http.Error(w, err.Error(), 400)
 	}
 }

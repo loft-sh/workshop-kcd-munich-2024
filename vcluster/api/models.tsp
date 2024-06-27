@@ -37,9 +37,9 @@ model vCluster {
 
 enum vClusterVersion {
   Stable,
-  Local,
+  Beta,
   `0.19.6`,
-  `0.20.0-beta.9`,
+  `0.20.0-beta.10`,
 }
 
 @error

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster/pkg/auth"
@@ -27,10 +28,12 @@ type Service struct {
 }
 
 type VClusterInstallOptions struct {
-	Values    map[string]any
-	Namespace string
-	Name      string
-	Version   string
+	Values        map[string]any
+	Namespace     string
+	Name          string
+	Version       string
+	UseLocalChart bool
+	Wait          bool
 }
 
 type VClusterHelmRelease struct {
@@ -48,9 +51,19 @@ func (s *Service) Install(ctx context.Context, options VClusterInstallOptions) (
 
 	// TODO(ThomasK33): Check if installation already exists --> if true, check ownership
 
-	version := cmp.Or(options.Version, DefaultVersion)
-	if version == "local" {
-		// TODO(ThomasK33): Install from local chart
+	helmArgs := []string{
+		"upgrade", "--install", name,
+	}
+
+	if options.UseLocalChart {
+		// (ThomasK33): Install from local chart
+		helmArgs = append(helmArgs, "./vcluster-oss/chart")
+	} else {
+		helmArgs = append(helmArgs,
+			"vcluster",
+			"--repo", "https://charts.loft.sh/",
+			"--repository-config", "''",
+		)
 	}
 
 	// TODO(ThomasK33): Set user as owner of vCluster
@@ -68,40 +81,50 @@ func (s *Service) Install(ctx context.Context, options VClusterInstallOptions) (
 		}
 	}
 
+	helmArgs = append(helmArgs, "--values", f.Name(), "--reuse-values")
+
+	helmArgs = append(helmArgs, "--namespace", options.Namespace)
+
+	version := cmp.Or(options.Version, DefaultVersion)
+	helmArgs = append(helmArgs, "--version", version)
+
+	if options.Wait {
+		helmArgs = append(helmArgs, "--wait")
+	}
+
 	cmd := exec.CommandContext(
 		ctx,
 		"helm",
-		"upgrade", "--install", name, "vcluster",
-		"--namespace", options.Namespace,
-		"--repo", "https://charts.loft.sh/",
-		"--repository-config", "''",
-		"--version", version,
-		"--values", f.Name(),
-		"--reuse-values",
+		helmArgs...,
 	)
 	output, err := cmd.CombinedOutput()
 
 	defer func() {
 		// Perform cleanup
 		if err != nil {
-			if uninstallErr := s.Uninstall(ctx, options.Namespace, name); uninstallErr != nil {
+			if uninstallErr := s.Uninstall(ctx, options.Namespace, name, options.Wait); uninstallErr != nil {
 				err = errors.Join(err, uninstallErr)
 			}
 		}
 	}()
 
 	if err != nil {
-		slog.Error("an error occurred while running the helm install command", "err", err, "output", string(output))
+		slog.Error("an error occurred while running the helm install command", "cmd", "helm "+strings.Join(helmArgs, " "), "err", err, "output", string(output))
 		return VClusterHelmRelease{}, fmt.Errorf("helm install: %w", err)
+	}
+
+	release, _, err := s.Get(ctx, options.Namespace, name)
+	if err != nil {
+		return VClusterHelmRelease{}, err
 	}
 
 	return VClusterHelmRelease{
 		Name:    name,
-		Version: version,
+		Version: release.Version,
 	}, nil
 }
 
-func (s *Service) Uninstall(ctx context.Context, namespace, name string) error {
+func (s *Service) Uninstall(ctx context.Context, namespace, name string, wait bool) error {
 	_, ok := auth.FromContext(ctx)
 	if !ok {
 		return auth.ErrNotFound
@@ -109,12 +132,17 @@ func (s *Service) Uninstall(ctx context.Context, namespace, name string) error {
 
 	name = cmp.Or(name, DefaultName)
 
+	waitStr := ""
+	if wait {
+		waitStr = "--wait"
+	}
+
 	// TODO(ThomasK33): Check if user is owner of the vCluster
 
 	cmd := exec.CommandContext(
 		ctx,
 		"helm",
-		"uninstall", name, "-n", namespace,
+		"uninstall", name, "-n", namespace, waitStr,
 	)
 	if err := cmd.Run(); err != nil {
 		return err

@@ -24,8 +24,12 @@ namespace ComputePlatformService.Kubernetes.Namespace.vClusterService {
     @maxLength(64)
     name?: string,
 
+    useLocalChart?: boolean,
     version?: vClusterVersion = vClusterVersion.Stable,
     values?: Record<unknown>,
+
+    /** Wait for the installation to succeed */
+    @query wait?: boolean = true,
   ): vCluster | ErrorUnauthorized | ErrorNotFound;
 
   @added(Versions.v2)
@@ -35,6 +39,9 @@ namespace ComputePlatformService.Kubernetes.Namespace.vClusterService {
 
     @maxLength(64)
     name?: string,
+
+    /** Wait for the deletion to succeed */
+    @query wait?: boolean = true,
   ): boolean | ErrorUnauthorized | ErrorNotFound;
 
   /**
@@ -53,3 +60,4 @@ namespace ComputePlatformService.Kubernetes.Namespace.vClusterService {
     name?: string,
   ): Kubeconfig | ErrorUnauthorized | ErrorNotFound;
 }
+

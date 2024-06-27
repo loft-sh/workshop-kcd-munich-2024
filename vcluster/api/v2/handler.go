@@ -29,11 +29,23 @@ func (c *ClusterService) VClusterServiceCreate(ctx context.Context, request VClu
 	if request.Body.Name != nil {
 		installOptions.Name = *request.Body.Name
 	}
-	if request.Body.Version != nil && *request.Body.Version != Stable {
-		installOptions.Version = string(*request.Body.Version)
+
+	if request.Body.Version != nil {
+		switch *request.Body.Version {
+		case Stable, N0196:
+			installOptions.Version = string(N0196)
+		case Beta, N0200Beta10:
+			installOptions.Version = string(N0200Beta10)
+		}
 	}
 	if request.Body.Values != nil {
 		installOptions.Values = *request.Body.Values
+	}
+	if request.Body.UseLocalChart != nil && *request.Body.UseLocalChart {
+		installOptions.UseLocalChart = true
+	}
+	if request.Params.Wait != nil {
+		installOptions.UseLocalChart = *request.Params.Wait
 	}
 
 	vClusterRelease, err := c.vClusterService.Install(ctx, installOptions)
@@ -54,7 +66,9 @@ func (c *ClusterService) VClusterServiceDelete(ctx context.Context, request VClu
 		name = *request.Body.Name
 	}
 
-	if err := c.vClusterService.Uninstall(ctx, request.Namespace, name); err != nil {
+	wait := request.Params.Wait != nil && *request.Params.Wait
+
+	if err := c.vClusterService.Uninstall(ctx, request.Namespace, name, wait); err != nil {
 		return nil, err
 	}
 

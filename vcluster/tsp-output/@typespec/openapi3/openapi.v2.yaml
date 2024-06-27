@@ -218,6 +218,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: wait
+          in: query
+          required: false
+          description: Wait for the installation to succeed
+          schema:
+            type: boolean
+            default: true
       responses:
         '200':
           description: The request has succeeded.
@@ -247,6 +254,8 @@ paths:
                 name:
                   type: string
                   maxLength: 64
+                useLocalChart:
+                  type: boolean
                 version:
                   allOf:
                     - $ref: '#/components/schemas/Models.vClusterVersion'
@@ -262,6 +271,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: wait
+          in: query
+          required: false
+          description: Wait for the deletion to succeed
+          schema:
+            type: boolean
+            default: true
       responses:
         '200':
           description: The request has succeeded.
@@ -463,9 +479,9 @@ components:
       type: string
       enum:
         - Stable
-        - Local
+        - Beta
         - 0.19.6
-        - 0.20.0-beta.9
+        - 0.20.0-beta.10
     Versions:
       type: string
       enum:

@@ -49,10 +49,10 @@ const (
 
 // Defines values for ModelsVClusterVersion.
 const (
-	Local      ModelsVClusterVersion = "Local"
-	N0196      ModelsVClusterVersion = "0.19.6"
-	N0200Beta9 ModelsVClusterVersion = "0.20.0-beta.9"
-	Stable     ModelsVClusterVersion = "Stable"
+	Beta        ModelsVClusterVersion = "Beta"
+	N0196       ModelsVClusterVersion = "0.19.6"
+	N0200Beta10 ModelsVClusterVersion = "0.20.0-beta.10"
+	Stable      ModelsVClusterVersion = "Stable"
 )
 
 // ModelsErrorAlreadyExists defines model for Models.ErrorAlreadyExists.
@@ -137,6 +137,12 @@ type VClusterServiceDeleteJSONBody struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// VClusterServiceDeleteParams defines parameters for VClusterServiceDelete.
+type VClusterServiceDeleteParams struct {
+	// Wait Wait for the deletion to succeed
+	Wait *bool `form:"wait,omitempty" json:"wait,omitempty"`
+}
+
 // VClusterServiceGetParams defines parameters for VClusterServiceGet.
 type VClusterServiceGetParams struct {
 	Name *string `form:"name,omitempty" json:"name,omitempty"`
@@ -144,9 +150,16 @@ type VClusterServiceGetParams struct {
 
 // VClusterServiceCreateJSONBody defines parameters for VClusterServiceCreate.
 type VClusterServiceCreateJSONBody struct {
-	Name    *string                 `json:"name,omitempty"`
-	Values  *map[string]interface{} `json:"values,omitempty"`
-	Version *ModelsVClusterVersion  `json:"version,omitempty"`
+	Name          *string                 `json:"name,omitempty"`
+	UseLocalChart *bool                   `json:"useLocalChart,omitempty"`
+	Values        *map[string]interface{} `json:"values,omitempty"`
+	Version       *ModelsVClusterVersion  `json:"version,omitempty"`
+}
+
+// VClusterServiceCreateParams defines parameters for VClusterServiceCreate.
+type VClusterServiceCreateParams struct {
+	// Wait Wait for the installation to succeed
+	Wait *bool `form:"wait,omitempty" json:"wait,omitempty"`
 }
 
 // VClusterServiceKubeconfigParams defines parameters for VClusterServiceKubeconfig.
@@ -179,13 +192,13 @@ type ServerInterface interface {
 	NamespaceKubeconfig(w http.ResponseWriter, r *http.Request, namespace string, params NamespaceKubeconfigParams)
 
 	// (DELETE /kubernetes/{namespace}/vcluster)
-	VClusterServiceDelete(w http.ResponseWriter, r *http.Request, namespace string)
+	VClusterServiceDelete(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceDeleteParams)
 
 	// (GET /kubernetes/{namespace}/vcluster)
 	VClusterServiceGet(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceGetParams)
 
 	// (PATCH /kubernetes/{namespace}/vcluster)
-	VClusterServiceCreate(w http.ResponseWriter, r *http.Request, namespace string)
+	VClusterServiceCreate(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceCreateParams)
 
 	// (GET /kubernetes/{namespace}/vcluster/kubeconfig)
 	VClusterServiceKubeconfig(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceKubeconfigParams)
@@ -373,8 +386,19 @@ func (siw *ServerInterfaceWrapper) VClusterServiceDelete(w http.ResponseWriter, 
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params VClusterServiceDeleteParams
+
+	// ------------- Optional query parameter "wait" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "wait", r.URL.Query(), &params.Wait)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wait", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.VClusterServiceDelete(w, r, namespace)
+		siw.Handler.VClusterServiceDelete(w, r, namespace, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -440,8 +464,19 @@ func (siw *ServerInterfaceWrapper) VClusterServiceCreate(w http.ResponseWriter, 
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params VClusterServiceCreateParams
+
+	// ------------- Optional query parameter "wait" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "wait", r.URL.Query(), &params.Wait)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wait", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.VClusterServiceCreate(w, r, namespace)
+		siw.Handler.VClusterServiceCreate(w, r, namespace, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -831,6 +866,7 @@ func (response NamespaceKubeconfig404JSONResponse) VisitNamespaceKubeconfigRespo
 
 type VClusterServiceDeleteRequestObject struct {
 	Namespace string `json:"namespace"`
+	Params    VClusterServiceDeleteParams
 	Body      *VClusterServiceDeleteJSONRequestBody
 }
 
@@ -903,6 +939,7 @@ func (response VClusterServiceGet404JSONResponse) VisitVClusterServiceGetRespons
 
 type VClusterServiceCreateRequestObject struct {
 	Namespace string `json:"namespace"`
+	Params    VClusterServiceCreateParams
 	Body      *VClusterServiceCreateJSONRequestBody
 }
 
@@ -1173,10 +1210,11 @@ func (sh *strictHandler) NamespaceKubeconfig(w http.ResponseWriter, r *http.Requ
 }
 
 // VClusterServiceDelete operation middleware
-func (sh *strictHandler) VClusterServiceDelete(w http.ResponseWriter, r *http.Request, namespace string) {
+func (sh *strictHandler) VClusterServiceDelete(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceDeleteParams) {
 	var request VClusterServiceDeleteRequestObject
 
 	request.Namespace = namespace
+	request.Params = params
 
 	var body VClusterServiceDeleteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1233,10 +1271,11 @@ func (sh *strictHandler) VClusterServiceGet(w http.ResponseWriter, r *http.Reque
 }
 
 // VClusterServiceCreate operation middleware
-func (sh *strictHandler) VClusterServiceCreate(w http.ResponseWriter, r *http.Request, namespace string) {
+func (sh *strictHandler) VClusterServiceCreate(w http.ResponseWriter, r *http.Request, namespace string, params VClusterServiceCreateParams) {
 	var request VClusterServiceCreateRequestObject
 
 	request.Namespace = namespace
+	request.Params = params
 
 	var body VClusterServiceCreateJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1295,29 +1334,30 @@ func (sh *strictHandler) VClusterServiceKubeconfig(w http.ResponseWriter, r *htt
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
