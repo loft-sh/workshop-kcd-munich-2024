@@ -39,7 +39,7 @@ enum vClusterVersion {
   Stable,
   Beta,
   `0.19.6`,
-  `0.20.0-beta.10`,
+  `0.20.0-beta.11`,
 }
 
 @error
@@ -64,3 +64,4 @@ model ErrorGeneric is errorTemplate<ApiErrorKind.Generic, 400>;
 model ErrorNotFound is errorTemplate<ApiErrorKind.NotFound, 404>;
 model ErrorAlreadyExists is errorTemplate<ApiErrorKind.AlreadyExists, 409>;
 model ErrorUnauthorized is errorTemplate<ApiErrorKind.Unauthorized, 401>;
+

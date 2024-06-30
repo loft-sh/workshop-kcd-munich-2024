@@ -30,20 +30,23 @@ func (c *ClusterService) VClusterServiceCreate(ctx context.Context, request VClu
 		installOptions.Name = *request.Body.Name
 	}
 
-	if request.Body.Version != nil {
-		switch *request.Body.Version {
-		case Stable, N0196:
-			installOptions.Version = string(N0196)
-		case Beta, N0200Beta10:
-			installOptions.Version = string(N0200Beta10)
-		}
-	}
 	if request.Body.Values != nil {
 		installOptions.Values = *request.Body.Values
 	}
+
 	if request.Body.UseLocalChart != nil && *request.Body.UseLocalChart {
 		installOptions.UseLocalChart = true
+	} else {
+		if request.Body.Version != nil {
+			switch *request.Body.Version {
+			case Stable, N0196:
+				installOptions.Version = string(N0196)
+			case Beta, N0200Beta11:
+				installOptions.Version = string(N0200Beta11)
+			}
+		}
 	}
+
 	if request.Params.Wait != nil {
 		installOptions.UseLocalChart = *request.Params.Wait
 	}

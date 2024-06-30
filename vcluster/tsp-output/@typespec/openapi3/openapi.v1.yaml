@@ -299,7 +299,7 @@ components:
         - Stable
         - Beta
         - 0.19.6
-        - 0.20.0-beta.10
+        - 0.20.0-beta.11
     Versions:
       type: string
       enum:
