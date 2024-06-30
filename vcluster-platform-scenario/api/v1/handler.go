@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster/pkg/namespace"
+	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster-platform-scenario/pkg/namespace"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )

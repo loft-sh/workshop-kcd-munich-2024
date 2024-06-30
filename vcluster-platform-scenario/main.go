@@ -17,9 +17,9 @@ import (
 	"github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
-	apiv1 "github.com/loft-sh/workshop-kcd-munich-2024/vcluster/api/v1"
-	apiv2 "github.com/loft-sh/workshop-kcd-munich-2024/vcluster/api/v2"
-	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster/pkg/auth"
+	apiv1 "github.com/loft-sh/workshop-kcd-munich-2024/vcluster-platform-scenario/api/v1"
+	apiv2 "github.com/loft-sh/workshop-kcd-munich-2024/vcluster-platform-scenario/api/v2"
+	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster-platform-scenario/pkg/auth"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"

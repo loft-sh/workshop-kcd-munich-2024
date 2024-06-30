@@ -1,4 +1,4 @@
-module github.com/loft-sh/workshop-kcd-munich-2024/vcluster
+module github.com/loft-sh/workshop-kcd-munich-2024/vcluster-platform-scenario
 
 go 1.22.4
 

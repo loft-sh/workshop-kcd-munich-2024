@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster/pkg/auth"
+	"github.com/loft-sh/workshop-kcd-munich-2024/vcluster-platform-scenario/pkg/auth"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
