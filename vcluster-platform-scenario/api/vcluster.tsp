@@ -25,7 +25,7 @@ namespace ComputePlatformService.Kubernetes.Namespace.vClusterService {
     name?: string,
 
     useLocalChart?: boolean,
-    version?: vClusterVersion = vClusterVersion.Stable,
+    version?: vClusterVersion = vClusterVersion.Beta,
     values?: Record<unknown>,
 
     /** Wait for the installation to succeed */
@@ -60,4 +60,3 @@ namespace ComputePlatformService.Kubernetes.Namespace.vClusterService {
     name?: string,
   ): Kubeconfig | ErrorUnauthorized | ErrorNotFound;
 }
-

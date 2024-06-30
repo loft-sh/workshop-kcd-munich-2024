@@ -259,7 +259,7 @@ paths:
                 version:
                   allOf:
                     - $ref: '#/components/schemas/Models.vClusterVersion'
-                  default: Stable
+                  default: Beta
                 values:
                   type: object
                   additionalProperties: {}

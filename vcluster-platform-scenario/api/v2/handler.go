@@ -48,7 +48,7 @@ func (c *ClusterService) VClusterServiceCreate(ctx context.Context, request VClu
 	}
 
 	if request.Params.Wait != nil {
-		installOptions.UseLocalChart = *request.Params.Wait
+		installOptions.Wait = *request.Params.Wait
 	}
 
 	vClusterRelease, err := c.vClusterService.Install(ctx, installOptions)
