@@ -7,10 +7,11 @@ A new team of data analysts joins and need access to some services on the cluste
 
 ## Setup
 
-Existing virtual clusters should already have the environment set up, run `kubectl get all -n devpod-demo` to confirm.
+1. Create a local cluster (kind, minikube, docker desktop, orbstack, ...)
+2. Run `kubectl apply -f devpod-scenario-2/deploy` to initialize the cluster. It'll deploy a mysql instance and a phpadmin dashboard
 
-Example Output:
 
+Output of `kubectl get all -n devpod-demo` to confirm:
 ```
 NAME                              READY   STATUS    RESTARTS   AGE
 pod/mysql-5866b56598-qvvxm        1/1     Running   0          140m
@@ -28,10 +29,3 @@ NAME                                    DESIRED   CURRENT   READY   AGE
 replicaset.apps/mysql-5866b56598        1         1         1       140m
 replicaset.apps/phpmyadmin-67dbb8db8d   1         1         1       141m
 ```
-
-Otherwise, run `kubectl apply devpod-scenario-2/deploy`.
-
-## Next Steps
-
-- node selector
-- resources
