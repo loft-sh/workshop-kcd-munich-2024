@@ -1,0 +1,44 @@
+
+[private]
+alias naas := namespace-as-a-service
+[private]
+alias vcaas := vcluster-as-a-service
+
+[private]
+default:
+  just --list
+
+# setup sets up argocd and all the necessary application sets to launch multiple multi tenancy scenarios
+setup: mkcert
+  -kubectl create namespace argocd
+
+  -kubectl create -n argocd secret tls argocd-server-tls \
+    --cert=./tmp/argocd-server.crt \
+    --key=./tmp/argocd-server.key \
+    --dry-run=client \
+    -o yaml \
+    | kubectl apply -f -
+
+  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# namespace-as-a-service deploys an applicationset that spins up namespaces on demand based on an applicationsets values for demo purposes
+namespace-as-a-service:
+  kubectl apply -f naas-application-set.yaml
+
+# vcluster-as-a-service deploys an applicationset that spins up virtual clusters on demand based on an applicationsets values for demo purposes
+vcluster-as-a-service:
+  kubectl apply -f vcaas-application-set.yaml
+
+# install-gateway-api install the v1.1 gateway api CRDs into the current kubecontext
+install-gateway-api:
+  kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml
+
+[private]
+argo-admin-pwd:
+  argocd admin initial-password -n argocd
+
+[private]
+mkcert:
+  -mkdir tmp
+  -mkcert -install -cert-file tmp/argocd-server.crt -key-file tmp/argocd-server.key argocd-server argocd-server.k8s.orb.local argocd.k8s.orb.local argocd-server.argocd.svc.cluster.local
+

@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: namespace-as-a-service
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - name: dev-thomas
+            revision: a3afe2d1ddf8
+  template:
+    metadata:
+      name: "{{.name}}-naas"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/ThomasK33/kcd-munich-workshop-gitops.git
+        targetRevision: "{{.revision}}"
+        path: naas/{{.name}}
+      destination:
+        server: "https://kubernetes.default.svc"
+        namespace: "{{.name}}"
