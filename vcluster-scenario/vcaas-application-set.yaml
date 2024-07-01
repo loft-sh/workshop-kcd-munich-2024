@@ -15,6 +15,9 @@ spec:
       name: "{{.name}}-vcaas"
     spec:
       project: default
+      syncPolicy:
+        automated:
+          prune: true
       source:
         chart: vcluster
         repoURL: https://charts.loft.sh

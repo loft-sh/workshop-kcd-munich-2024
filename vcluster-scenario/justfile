@@ -33,7 +33,7 @@ vcluster-as-a-service:
 install-gateway-api:
   kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml
 
-[private]
+# argo-admin-pwd prints the initial admin password for ArgoCD
 argo-admin-pwd:
   argocd admin initial-password -n argocd
 

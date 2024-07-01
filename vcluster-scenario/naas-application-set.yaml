@@ -16,6 +16,9 @@ spec:
       name: "{{.name}}-naas"
     spec:
       project: default
+      syncPolicy:
+        automated:
+          prune: true
       source:
         repoURL: https://github.com/ThomasK33/kcd-munich-workshop-gitops.git
         targetRevision: "{{.revision}}"
